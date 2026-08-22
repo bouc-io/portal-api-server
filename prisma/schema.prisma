@@ -1,0 +1,79 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model LlmInstruction {
+  id         String   @id @default(uuid())
+  org_id     String?                       // from JWT org_id claim (org-level instruction)
+  user_id    String?                       // from JWT preferred_username (user-level instruction)
+  title      String
+  content    String
+  priority   Int      @default(0)
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  created_by String?
+
+  @@index([priority])
+  @@index([is_active])
+  @@index([org_id])
+  @@index([user_id])
+  @@map("llm_instructions")
+}
+
+model Subscription {
+  id         String    @id @default(uuid())
+  org_id     String?                       // from JWT org_id claim (org-level billing)
+  user_id    String?                       // from JWT preferred_username (user-level billing)
+  plan       String                        // e.g. "Free", "Starter", "Pro"
+  status     String                        // 'active' | 'cancelled' | 'expired'
+  price      String                        // e.g. "$29.00"
+  started_at DateTime  @default(now())
+  ended_at   DateTime?                     // null = currently active
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  @@index([status])
+  @@index([org_id])
+  @@index([user_id])
+  @@index([started_at(sort: Desc)])
+  @@map("subscriptions")
+}
+
+model Invoice {
+  id          String   @id
+  org_id      String?                      // from JWT org_id claim
+  user_id     String?                      // from JWT preferred_username
+  date        DateTime
+  description String
+  amount      String
+  status      String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@index([org_id])
+  @@index([user_id])
+  @@index([date(sort: Desc)])
+  @@map("invoices")
+}
+
+model PaymentMethod {
+  id         String   @id @default(uuid())
+  org_id     String?                       // from JWT org_id claim
+  user_id    String?                       // from JWT preferred_username
+  brand      String
+  last4      String
+  expiry     String
+  is_default Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([org_id])
+  @@index([user_id])
+  @@map("payment_methods")
+}
